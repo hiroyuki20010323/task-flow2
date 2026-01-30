@@ -15,7 +15,7 @@ export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 
 // 互換性のための型エイリアス（小文字版）
 export type ProjectStatus = 'active' | 'archived' | 'completed';
-export type TaskStatusLower = 'todo' | 'in_progress' | 'review' | 'done';
+export type TaskStatusLower = 'todo' | 'in_progress' | 'review' | 'done' | 'cancelled';
 export type TaskPriorityLower = 'low' | 'medium' | 'high' | 'urgent';
 export type ProjectRoleLower = 'owner' | 'admin' | 'member' | 'viewer';
 
@@ -113,7 +113,7 @@ export interface Task {
   description: string | null;
   status: TaskStatus;
   priority: TaskPriority;
-  projectId: string;
+  projectId: string | null;
   assigneeId: string | null;
   creatorId: string;
   createdById?: string; // 互換性のため
@@ -127,20 +127,38 @@ export interface Task {
 
 export interface CreateTaskData {
   title: string;
-  description?: string;
+  description?: string | null;
   priority?: TaskPriority;
-  assigneeId?: string;
+  assigneeId?: string | null;
   dueDate?: string | Date | null;
-  projectId: string;
+  projectId?: string | null;
 }
 
 export interface UpdateTaskData {
   title?: string;
-  description?: string;
+  description?: string | null;
   status?: TaskStatus;
   priority?: TaskPriority;
+  projectId?: string | null;
   assigneeId?: string | null;
   dueDate?: string | Date | null;
+}
+
+export interface TaskResponse {
+  success?: boolean; // 互換性のため
+  task?: Task; // feature/tasks形式
+  data?: Task; // API形式
+  error?: string;
+}
+
+export interface TasksResponse {
+  success?: boolean; // 互換性のため
+  tasks?: Task[]; // feature/tasks形式
+  data?: Task[] | PaginatedResponse<Task>; // API形式
+  total?: number;
+  page?: number;
+  limit?: number;
+  error?: string;
 }
 
 // ============================================
@@ -184,8 +202,8 @@ export interface PaginatedResponse<T> {
 // 特定のレスポンス型
 export type ProjectResponse = ApiResponse<Project>;
 export type ProjectsResponse = ApiResponse<PaginatedResponse<Project> | Project[]>;
-export type TaskResponse = ApiResponse<Task>;
-export type TasksResponse = ApiResponse<PaginatedResponse<Task> | Task[]>;
+export type TaskResponseType = ApiResponse<Task>;
+export type TasksResponseType = ApiResponse<PaginatedResponse<Task> | Task[]>;
 
 // ============================================
 // 共通の型定義
@@ -199,6 +217,6 @@ export interface SelectOption {
 export type SortOrder = 'asc' | 'desc';
 
 export interface SortParams {
-  field: string;
-  order: SortOrder;
+  field?: string;
+  order?: SortOrder;
 }
