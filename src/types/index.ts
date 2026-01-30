@@ -5,6 +5,21 @@
 // 編集する場合は、他のエージェントとの整合性を確認してください。
 
 // ============================================
+// 基本型定義
+// ============================================
+
+export type UserRole = 'ADMIN' | 'MEMBER';
+export type ProjectRole = 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
+export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE';
+export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+
+// 互換性のための型エイリアス（小文字版）
+export type ProjectStatus = 'active' | 'archived' | 'completed';
+export type TaskStatusLower = 'todo' | 'in_progress' | 'review' | 'done';
+export type TaskPriorityLower = 'low' | 'medium' | 'high' | 'urgent';
+export type ProjectRoleLower = 'owner' | 'admin' | 'member' | 'viewer';
+
+// ============================================
 // 認証関連の型定義
 // ============================================
 
@@ -13,6 +28,7 @@ export interface User {
   email: string;
   name: string | null;
   image: string | null;
+  role: UserRole;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,16 +60,14 @@ export interface AuthResponse {
 // プロジェクト関連の型定義
 // ============================================
 
-export type ProjectStatus = 'active' | 'archived' | 'completed';
-
 export interface Project {
   id: string;
   name: string;
   description: string | null;
-  status: ProjectStatus;
   ownerId: string;
   createdAt: Date;
   updatedAt: Date;
+  owner?: User;
   members?: ProjectMember[];
   tasks?: Task[];
 }
@@ -63,11 +77,11 @@ export interface ProjectMember {
   projectId: string;
   userId: string;
   role: ProjectRole;
-  createdAt: Date;
+  joinedAt: Date;
+  createdAt?: Date; // 互換性のため
+  project?: Project;
   user?: User;
 }
-
-export type ProjectRole = 'owner' | 'admin' | 'member' | 'viewer';
 
 export interface CreateProjectData {
   name: string;
@@ -89,25 +103,9 @@ export interface UpdateMemberRoleData {
   role: ProjectRole;
 }
 
-export interface ProjectResponse {
-  success: boolean;
-  data?: Project;
-  error?: string;
-}
-
-export interface ProjectsResponse {
-  success: boolean;
-  data?: Project[];
-  error?: string;
-}
-
 // ============================================
 // タスク関連の型定義
 // ============================================
-
-export type TaskStatus = 'todo' | 'in_progress' | 'review' | 'done';
-
-export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 
 export interface Task {
   id: string;
@@ -117,12 +115,13 @@ export interface Task {
   priority: TaskPriority;
   projectId: string;
   assigneeId: string | null;
-  createdById: string;
+  creatorId: string;
+  createdById?: string; // 互換性のため
   dueDate: Date | null;
   createdAt: Date;
   updatedAt: Date;
   project?: Project;
-  assignee?: User;
+  assignee?: User | null;
   creator?: User;
 }
 
@@ -130,9 +129,9 @@ export interface CreateTaskData {
   title: string;
   description?: string;
   priority?: TaskPriority;
-  projectId: string;
   assigneeId?: string;
-  dueDate?: Date;
+  dueDate?: string | Date | null;
+  projectId: string;
 }
 
 export interface UpdateTaskData {
@@ -141,19 +140,7 @@ export interface UpdateTaskData {
   status?: TaskStatus;
   priority?: TaskPriority;
   assigneeId?: string | null;
-  dueDate?: Date | null;
-}
-
-export interface TaskResponse {
-  success: boolean;
-  data?: Task;
-  error?: string;
-}
-
-export interface TasksResponse {
-  success: boolean;
-  data?: Task[];
-  error?: string;
+  dueDate?: string | Date | null;
 }
 
 // ============================================
@@ -163,8 +150,14 @@ export interface TasksResponse {
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
-  error?: string;
+  error?: ApiError | string;
   message?: string;
+}
+
+export interface ApiError {
+  code?: string;
+  message: string;
+  details?: unknown;
 }
 
 export interface PaginationParams {
@@ -173,22 +166,26 @@ export interface PaginationParams {
 }
 
 export interface PaginatedResponse<T> {
-  success: boolean;
-  data: T[];
-  pagination: {
+  items?: T[];
+  data?: T[]; // 互換性のため
+  total: number;
+  page: number;
+  pageSize?: number;
+  limit?: number; // 互換性のため
+  totalPages: number;
+  pagination?: { // 互換性のため
     page: number;
     limit: number;
     total: number;
     totalPages: number;
   };
-  error?: string;
 }
 
-export interface ApiError {
-  success: false;
-  error: string;
-  message?: string;
-}
+// 特定のレスポンス型
+export type ProjectResponse = ApiResponse<Project>;
+export type ProjectsResponse = ApiResponse<PaginatedResponse<Project> | Project[]>;
+export type TaskResponse = ApiResponse<Task>;
+export type TasksResponse = ApiResponse<PaginatedResponse<Task> | Task[]>;
 
 // ============================================
 // 共通の型定義
